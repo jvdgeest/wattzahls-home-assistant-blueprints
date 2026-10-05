@@ -1,30 +1,30 @@
 blueprint:
-  name: "WATTZAHLS.DE – Waschmaschine fertig"
+  name: "WATTZAHLS.DE – Washing Machine Finished"
   description: >
-    Erkennt über die Leistungsaufnahme zuerst einen laufenden Waschgang und später
-    das Ende. Ein input_boolean-Helfer verhindert Fehlmeldungen im normalen Standby.
-    Anschließend wird eine Benachrichtigung an die Home-Assistant-Companion-App gesendet.
+    Detects an active wash cycle from the power consumption, then detects when it
+    has finished. An input_boolean helper prevents false notifications during normal
+    standby. A notification is then sent to the Home Assistant Companion app.
   domain: automation
-  source_url: https://github.com/123trs/wattzahls-home-assistant-blueprints/blob/main/automation/waschmaschine-fertig.yaml
+  source_url: https://github.com/jvdgeest/wattzahls-home-assistant-blueprints/blob/main/automation/waschmaschine-fertig.yaml
   author: WATTZAHLS.DE
   input:
     power_sensor:
-      name: Leistungssensor
-      description: Sensor mit der aktuellen Leistungsaufnahme der Waschmaschine in Watt.
+      name: Power sensor
+      description: Sensor reporting the washing machine's current power consumption in watts.
       selector:
         entity:
           filter:
             domain: sensor
     running_helper:
-      name: Helfer "Waschmaschine läuft"
-      description: Ein input_boolean, der sich merkt, dass die Maschine wirklich gelaufen ist.
+      name: '"Washing machine running" helper'
+      description: An input_boolean that remembers whether the machine has actually run.
       selector:
         entity:
           filter:
             domain: input_boolean
     running_above:
-      name: Startgrenze
-      description: Oberhalb dieser Leistung gilt die Waschmaschine als gestartet.
+      name: Start threshold
+      description: Above this power level, the washing machine is considered to have started.
       default: 10
       selector:
         number:
@@ -34,8 +34,8 @@ blueprint:
           unit_of_measurement: W
           mode: box
     finished_below:
-      name: Fertig-Grenze
-      description: Unterhalb dieser Leistung kann der Waschgang als beendet gelten.
+      name: Completion threshold
+      description: Below this power level, the wash cycle can be considered finished.
       default: 3
       selector:
         number:
@@ -45,8 +45,8 @@ blueprint:
           unit_of_measurement: W
           mode: box
     finished_wait:
-      name: Fertig-Wartezeit
-      description: So lange muss die Leistung unter der Fertig-Grenze bleiben.
+      name: Completion wait time
+      description: How long the power must remain below the completion threshold.
       default: 120
       selector:
         number:
@@ -55,20 +55,20 @@ blueprint:
           unit_of_measurement: seconds
           mode: box
     notify_device:
-      name: Handy mit Home-Assistant-App
-      description: Gerät, das die Fertig-Meldung erhalten soll.
+      name: Phone with Home Assistant app
+      description: Device that should receive the completion notification.
       selector:
         device:
           filter:
             integration: mobile_app
     notification_title:
-      name: Titel
-      default: "Waschmaschine fertig"
+      name: Title
+      default: "Washing machine finished"
       selector:
         text:
     notification_message:
-      name: Nachricht
-      default: "Die Waschmaschine ist fertig."
+      name: Message
+      default: "The washing machine has finished."
       selector:
         text:
 
@@ -94,7 +94,7 @@ actions:
           - condition: trigger
             id: running
         sequence:
-          - alias: "Laufenden Waschgang merken"
+          - alias: "Remember active wash cycle"
             action: input_boolean.turn_on
             target:
               entity_id: !input running_helper
@@ -105,13 +105,13 @@ actions:
             entity_id: !input running_helper
             state: "on"
         sequence:
-          - alias: "Fertig-Meldung senden"
+          - alias: "Send completion notification"
             domain: mobile_app
             type: notify
             device_id: !input notify_device
             title: !input notification_title
             message: !input notification_message
-          - alias: "Lauf-Helfer zurücksetzen"
+          - alias: "Reset running helper"
             action: input_boolean.turn_off
             target:
               entity_id: !input running_helper
